@@ -76,7 +76,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int64) (*domain.Driver,
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*domain.Driver, error) {
 
 	query := `
-	SELECT id, name, username, password,created_at,
+	SELECT id, name, username, password,created_at
 	FROM drivers
 	WHERE username = $1
 	`

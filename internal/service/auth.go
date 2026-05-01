@@ -12,6 +12,7 @@ package service
 import (
 	"context"
 
+	"tracking.xlkv.com/internal/domain"
 	"tracking.xlkv.com/internal/jwt"
 )
 
@@ -21,31 +22,31 @@ type Cache interface {
 	DeleteRefreshToken(ctx context.Context, token string) error
 }
 
-type AuthRepositroy struct {
-	Cache     Cache
-	SecretKey string
+type AuthService struct {
+	cache     Cache
+	secretKey string
 }
 
-func NewAuthRepository(cache Cache, secretKey string) *AuthRepositroy {
-	return &AuthRepositroy{
-		Cache:     cache,
-		SecretKey: secretKey,
+func NewAuthService(cache Cache, secretKey string) *AuthService {
+	return &AuthService{
+		cache:     cache,
+		secretKey: secretKey,
 	}
 }
 
-func (r *AuthRepositroy) GenereateTokens(ctx context.Context, driverID int64) (string, string, error) {
+func (r *AuthService) GenereateTokens(ctx context.Context, driverID int64) (string, string, error) {
 
 	refreshToken, err := jwt.GenerateRefreshToken()
 	if err != nil {
 		return "", "", err
 	}
 
-	acessToken, err := jwt.GenerateAccessToken(driverID, r.SecretKey)
+	acessToken, err := jwt.GenerateAccessToken(driverID, r.secretKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	err = r.Cache.SetRefreshToken(ctx, refreshToken, driverID)
+	err = r.cache.SetRefreshToken(ctx, refreshToken, driverID)
 
 	if err != nil {
 		return "", "", err
@@ -54,3 +55,17 @@ func (r *AuthRepositroy) GenereateTokens(ctx context.Context, driverID int64) (s
 	return acessToken, refreshToken, nil
 }
 
+func (r *AuthService) Refresh(ctx context.Context, refresh_token string) (string, error) {
+	userID, err := r.cache.GetRefreshToken(ctx, refresh_token)
+
+	if err != nil {
+		return "", domain.ErrUnauthorized
+	}
+
+	accessToken, err := jwt.GenerateAccessToken(userID, r.secretKey)
+	return accessToken, err
+}
+
+func (r *AuthService) Logout(ctx context.Context, refresh_token string) error {
+	return r.cache.DeleteRefreshToken(ctx, refresh_token)
+}
