@@ -1,0 +1,9 @@
+-- +goose Up
+ALTER TABLE drivers
+ADD COLUMN IF NOT EXISTS username TEXT NOT NULL UNIQUE,
+ADD COLUMN IF NOT EXISTS password TEXT NOT NULL;
+
+-- +goose Down
+ALTER TABLE drivers
+DROP COLUMN IF EXISTS username,
+DROP COLUMN IF EXISTS password;
