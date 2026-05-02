@@ -34,6 +34,10 @@ func NewAuthService(cache Cache, secretKey string) *AuthService {
 	}
 }
 
+func (r *AuthService) ValidateAccessToken(ctx context.Context, accessToken string) (*jwt.Claims, error) {
+	return jwt.ValidateAccessToken(accessToken, r.secretKey)
+}
+
 func (r *AuthService) GenereateTokens(ctx context.Context, driverID int64) (string, string, error) {
 
 	refreshToken, err := jwt.GenerateRefreshToken()

@@ -9,4 +9,5 @@ var (
 	ErrUnauthorized  = errors.New("unauthorized")
 	ErrInvalidToken  = errors.New("invalid token")
 	ErrValidation  = errors.New("validation error")
+	ErrInvalidParam  = errors.New("invalid param")
 )

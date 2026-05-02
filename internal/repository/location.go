@@ -14,22 +14,30 @@ type LocationRepository struct {
 	pool *pgxpool.Pool
 }
 
+func NewLocationRepository(pool *pgxpool.Pool) *LocationRepository {
+	return &LocationRepository{
+		pool: pool,
+	}
+}
+
 func (r *LocationRepository) Create(ctx context.Context, location *domain.Location) error {
 
 	query := `
 	INSERT INTO locations(lat, lng, vehicle_id, trip_id)
-	VALUES ($1, $2, $3, $4)
-	RETURNING id,recorded_at;
+	SELECT $1, $2, t.vehicle_id, t.id
+	FROM trips t
+	WHERE id = $3
+	RETURNING id,vehicle_id,recorded_at;
 	`
 
 	err := r.pool.QueryRow(
 		ctx, query,
 		location.Lat,
 		location.Lng,
-		location.VehicleID,
 		location.TripID,
 	).Scan(
 		&location.ID,
+		&location.VehicleID,
 		&location.RecordedAt,
 	)
 
@@ -38,9 +46,9 @@ func (r *LocationRepository) Create(ctx context.Context, location *domain.Locati
 		if errors.As(err, &pgErr) {
 			switch pgErr.ConstraintName {
 			case "locations_vehicle_id_fkey":
-				return errors.New("vehicle id does not exists")
+				return domain.ErrInvalidParam
 			case "locations_trip_id_fkey":
-				return errors.New("trip id does not exists")
+				return domain.ErrInvalidParam
 			default:
 				return err
 			}
